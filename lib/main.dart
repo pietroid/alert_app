@@ -1,115 +1,122 @@
+import 'package:alert_app/bloc/alert_bloc.dart';
+import 'package:alert_app/repository/alert_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(BlocProvider(
+    create: (_) => AlertBloc(alertRepository: AlertRepository()),
+    child: const AlertApp(),
+  ));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class AlertApp extends StatelessWidget {
+  const AlertApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+        theme: ThemeData(
+          primarySwatch: Colors.red,
+        ),
+        home: Scaffold(
+          appBar: AppBar(
+            title: const Text('Alerta amor'),
+            actions: [
+              IconButton(
+                  onPressed: () {},
+                  icon: Icon(
+                    Icons.settings,
+                  ))
+            ],
+          ),
+          body: AlertScreen(),
+        ));
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class AlertScreen extends StatefulWidget {
+  const AlertScreen({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<AlertScreen> createState() => _AlertScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+class _AlertScreenState extends State<AlertScreen> {
+  @override
+  void initState() {
+    context.read<AlertBloc>().add(Connect());
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+    final alert = context.watch<AlertBloc>();
+    return alert.state is AlertConnectingState
+        ? Center(
+            child: CircularProgressIndicator(),
+          )
+        : Center(
+            child: AlertButton(),
+          );
+  }
+}
+
+class AlertButton extends StatefulWidget {
+  const AlertButton({Key? key}) : super(key: key);
+
+  @override
+  State<AlertButton> createState() => _AlertButtonState();
+}
+
+class _AlertButtonState extends State<AlertButton> {
+  @override
+  Widget build(BuildContext context) {
+    final alert = context.watch<AlertBloc>();
+
+    String status = '';
+    String? label;
+    Function()? onPressed;
+    if (alert.state is AlertIdleState ||
+        alert.state is AlertSeenState ||
+        alert.state is AlertFailureState) {
+      label = 'chamar';
+      onPressed = () => alert.add(SendAlert());
+      if (alert.state is AlertFailureState) {
+        status = 'Não respondido. Tente novamente';
+      }
+      if (alert.state is AlertSeenState) {
+        status = 'Respondido! Aguarde um pouco';
+      }
+    } else if (alert.state is AlertSendingState) {
+      label = 'Chamando...';
+    } else if (alert.state is AlertReceivingState) {
+      label = 'Responder';
+      status = '${(alert.state as AlertReceivingState).senderName} chamando!!!';
+      onPressed = () => alert.add(SendAlertResponse());
+    }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(40.0),
+          child: Text(
+            status,
+            style: TextStyle(fontSize: 16),
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        ElevatedButton(
+          child: Text(
+            label ?? '',
+            style: TextStyle(fontSize: 20),
+          ),
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            shape: CircleBorder(),
+            padding: EdgeInsets.all(80),
+          ),
+        ),
+      ],
     );
   }
 }
