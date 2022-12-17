@@ -1,13 +1,25 @@
 import 'package:alert_app/bloc/alert_bloc.dart';
 import 'package:alert_app/repository/alert_repository.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(BlocProvider(
     create: (_) => AlertBloc(alertRepository: AlertRepository()),
     child: const AlertApp(),
   ));
+  await Firebase.initializeApp();
+  await FirebaseMessaging.instance.subscribeToTopic("all");
+  // Set the background messaging handler early on, as a named top-level function
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+}
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('Handling a background message ${message.messageId}');
 }
 
 class AlertApp extends StatelessWidget {
