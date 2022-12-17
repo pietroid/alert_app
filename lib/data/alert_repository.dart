@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:convert';
 
+import 'package:alert_app/data/alert_datasource.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'background_handler.dart';
@@ -18,11 +19,31 @@ class AlertRepository {
     await FirebaseMessaging.instance.subscribeToTopic("all");
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onMessage.listen(
+      messagingForegroundHandler,
+    );
   }
 
-  void sendAlert() async {}
+  Future<void> messagingForegroundHandler(RemoteMessage message) async {
+    if (message.data['type'] == 'alert' && message.data['name'] != name) {
+      _receivedAlertsController.add(message.data['name']);
+    }
+    if (message.data['type'] == 'alertResponse' &&
+        message.data['name'] == name) {
+      _receivedAlertResponsesController.add("");
+    }
+  }
 
-  void sendAlertResponse(String responseName) async {}
+  void sendAlert() => AlertDataSource().sendPushToFCM({
+        'name': name,
+        'type': 'alert',
+      });
+
+  void sendAlertResponse(String responseName) =>
+      AlertDataSource().sendPushToFCM({
+        'name': responseName,
+        'type': 'alertResponse',
+      });
 
   Stream<String> get receivedAlerts => _receivedAlertsController.stream;
   Stream<String> get receivedAlertResponses =>
