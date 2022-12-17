@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:alert_app/data/alert_datasource.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'background_handler.dart';
 
 class AlertRepository {
@@ -22,6 +22,15 @@ class AlertRepository {
     FirebaseMessaging.onMessage.listen(
       messagingForegroundHandler,
     );
+  }
+
+  void checkBackgroundAlert() async {
+    final preferences = await SharedPreferences.getInstance();
+    final lastAlert = preferences.getString('alert') ?? '';
+    if (lastAlert != '' && lastAlert != name) {
+      await preferences.setString('alert', '');
+      _receivedAlertsController.add(lastAlert);
+    }
   }
 
   Future<void> messagingForegroundHandler(RemoteMessage message) async {

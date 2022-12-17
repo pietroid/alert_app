@@ -1,4 +1,4 @@
-import 'package:alert_app/repository/alert_repository.dart';
+import 'package:alert_app/data/alert_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AlertBloc extends Bloc<AlertEvent, AlertState> {
@@ -11,6 +11,7 @@ class AlertBloc extends Bloc<AlertEvent, AlertState> {
     on<Connect>((event, emit) async {
       try {
         await _alertRepository.initialize();
+        add(CheckBackgroundAlert());
         _alertRepository.receivedAlerts.listen((String name) {
           add(ReceiveAlert(name));
         });
@@ -59,6 +60,10 @@ class AlertBloc extends Bloc<AlertEvent, AlertState> {
         emit(AlertSeenState());
       }
     });
+
+    on<CheckBackgroundAlert>((event, emit) async {
+      _alertRepository.checkBackgroundAlert();
+    });
   }
 }
 
@@ -75,6 +80,8 @@ class ReceiveAlert extends AlertEvent {
 
   ReceiveAlert(this.senderName);
 }
+
+class CheckBackgroundAlert extends AlertEvent {}
 
 class ReceiveAlertResponse extends AlertEvent {}
 
