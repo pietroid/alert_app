@@ -10,7 +10,7 @@ class AlertBloc extends Bloc<AlertEvent, AlertState> {
         super(AlertConnectingState()) {
     on<Connect>((event, emit) async {
       try {
-        await _alertRepository.connect();
+        await _alertRepository.initialize();
         _alertRepository.receivedAlerts.listen((String name) {
           add(ReceiveAlert(name));
         });

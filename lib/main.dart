@@ -11,15 +11,6 @@ Future<void> main() async {
     create: (_) => AlertBloc(alertRepository: AlertRepository()),
     child: const AlertApp(),
   ));
-  await Firebase.initializeApp();
-  await FirebaseMessaging.instance.subscribeToTopic("all");
-  // Set the background messaging handler early on, as a named top-level function
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-}
-
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a background message ${message.messageId}');
 }
 
 class AlertApp extends StatelessWidget {
