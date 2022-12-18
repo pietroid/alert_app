@@ -1,5 +1,6 @@
 import 'package:alert_app/data/alert_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 
 class AlertBloc extends Bloc<AlertEvent, AlertState> {
   final AlertRepository _alertRepository;
@@ -40,8 +41,10 @@ class AlertBloc extends Bloc<AlertEvent, AlertState> {
 
     on<ReceiveAlert>((event, emit) async {
       emit(AlertReceivingState(event.senderName));
+      FlutterRingtonePlayer.playAlarm();
       await Future.delayed(Duration(seconds: responseWaitTime), () {
         if (state is AlertReceivingState) {
+          FlutterRingtonePlayer.stop();
           emit(AlertIdleState());
         }
       });
@@ -51,6 +54,7 @@ class AlertBloc extends Bloc<AlertEvent, AlertState> {
       if (state is AlertReceivingState) {
         _alertRepository
             .sendAlertResponse((state as AlertReceivingState).senderName);
+        FlutterRingtonePlayer.stop();
         emit(AlertIdleState());
       }
     });

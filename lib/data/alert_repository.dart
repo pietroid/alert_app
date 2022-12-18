@@ -26,9 +26,10 @@ class AlertRepository {
 
   void checkBackgroundAlert() async {
     final preferences = await SharedPreferences.getInstance();
-    final lastAlert = preferences.getString('alert') ?? '';
+    await preferences.reload();
+    final lastAlert = preferences.getString('alert_key') ?? '';
     if (lastAlert != '' && lastAlert != name) {
-      await preferences.setString('alert', '');
+      await preferences.setString('alert_key', '');
       _receivedAlertsController.add(lastAlert);
     }
   }
