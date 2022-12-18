@@ -11,9 +11,6 @@ class AlertRepository {
   final StreamController<String> _receivedAlertResponsesController =
       StreamController();
 
-  //TODO: this is determined by settings
-  final name = 'myname';
-
   Future<void> initialize() async {
     await Firebase.initializeApp();
     await FirebaseMessaging.instance.subscribeToTopic("all");
@@ -28,26 +25,35 @@ class AlertRepository {
     final preferences = await SharedPreferences.getInstance();
     await preferences.reload();
     final lastAlert = preferences.getString('alert_key') ?? '';
-    if (lastAlert != '' && lastAlert != name) {
+    final userName = preferences.getString('user_name');
+    if (lastAlert != '' && lastAlert != userName) {
       await preferences.setString('alert_key', '');
       _receivedAlertsController.add(lastAlert);
     }
   }
 
   Future<void> messagingForegroundHandler(RemoteMessage message) async {
-    if (message.data['type'] == 'alert' && message.data['name'] != name) {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.reload();
+    final userName = preferences.getString('user_name');
+    if (message.data['type'] == 'alert' && message.data['name'] != userName) {
       _receivedAlertsController.add(message.data['name']);
     }
     if (message.data['type'] == 'alertResponse' &&
-        message.data['name'] == name) {
+        message.data['name'] == userName) {
       _receivedAlertResponsesController.add("");
     }
   }
 
-  void sendAlert() => AlertDataSource().sendPushToFCM({
-        'name': name,
-        'type': 'alert',
-      });
+  void sendAlert() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.reload();
+    final userName = preferences.getString('user_name');
+    AlertDataSource().sendPushToFCM({
+      'name': userName,
+      'type': 'alert',
+    });
+  }
 
   void sendAlertResponse(String responseName) =>
       AlertDataSource().sendPushToFCM({
